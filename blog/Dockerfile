@@ -19,4 +19,4 @@ ENV DATABASE_URL=postgres://admin:admin@db:5432/blog
 
 RUN diesel migration run
 # Run Diesel Migrations and start the application
-CMD  ["sh","./blog"]
+CMD  ./blog
