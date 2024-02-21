@@ -96,7 +96,7 @@ Puis exécuter `diesel migration run` pour initialiser la base de données.
 Enfin, lancer l'application avec la commande suivante :
 
 ```bash
-./blog
+./blog  
 ```
 
 Le site est maintenant accessible sur http://localhost:8000.
@@ -109,3 +109,43 @@ Le site est maintenant accessible sur http://localhost:8000.
     - `templates`
 - Assurez-vous d'avoir la base de données démarrée avant l'exécution des migrations.
 - Penser à exécuter les migrations avant de démarrer l'application.
+
+
+
+
+## COMMENT LANCER L'APPLICATION
+Pour tester votre application Rust avec Docker, suivez ces étapes :
+
+Assurez-vous que votre service PostgreSQL est en cours d'exécution via Docker Compose :
+
+# docker-compose up -d
+Ensuite, construisez votre image Docker pour l'application Rust :
+
+# docker build -t blog .
+Enfin, exécutez le conteneur Docker de votre application :
+
+
+# docker run -p 8000:8000 blog
+Assurez-vous que le port spécifié dans la commande docker run correspond au port sur lequel votre application Rust écoute.
+
+## DOCKERFILE EN MODE DEV
+
+# Build Stage
+FROM rustlang/rust:nightly as builder
+
+WORKDIR /blog
+
+# Installation de la bibliothèque libpq
+RUN apt-get update && apt-get install -y libpq-dev
+
+# Copie du code source dans l'image
+COPY . .
+
+# Compilation de l'application
+RUN cargo install diesel_cli --no-default-features --features postgres
+
+# Spécifiez les mêmes informations d'identification que pour la base de données
+ENV DATABASE_URL="postgres://admin:admin@db:5432/blog"
+
+# Run Diesel Migrations and start the application
+CMD diesel migration run && cargo run
