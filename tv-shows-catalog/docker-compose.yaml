@@ -1,2 +1,18 @@
 # Définir cette configuration Compose afin de lancer l'application
 # Make Me Watch en production.
+
+version: "3.9"
+services:
+  server:
+    build: server/.
+    command: ["sh", "-c", "npm run build && npm run start:prod"]
+    ports:
+      - "3000:3000"
+
+  client:
+    build: client/.
+    command: ["sh", "-c", "npm run build && node build/index.js"]
+    ports:
+      - "3001:3000"
+    depends_on:
+      - server
