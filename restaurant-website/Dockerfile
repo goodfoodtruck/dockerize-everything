@@ -1,47 +1,32 @@
-FROM php:8.3
-
-WORKDIR /var/www/html
-
-COPY . /var/www/html
+FROM php:8.3-fpm-alpine
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 ENV APP_ENV=prod
 
-RUN apt-get update && apt-get install -y \
-    zip \
-    git \
-    unzip \
-    libicu-dev\
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk update && \
+    apk add --no-cache \
+        nginx \
+        zip \
+        git \
+        unzip \
+        icu-dev && \
+    rm -rf /var/cache/apk/*
 
 RUN docker-php-ext-install intl
 
-RUN curl -sS https://getcomposer.org/installer | php -- \
-     --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:lts /usr/bin/composer /usr/bin/composer
 
-RUN curl -sS https://get.symfony.com/cli/installer | bash
+COPY composer.* .
 
-RUN find / -type f -name symfony -exec mv {} usr/local/bin/symfony \; || true
-
-
-RUN chown -R www-data:www-data /var/www
-USER www-data
+COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
 
-USER root
+RUN chown -R www-data:www-data /var/www/html
 
-RUN composer require symfony/runtime
+USER www-data
 
 RUN php bin/console asset-map:compile
 
 RUN php bin/console cache:clear --env=prod
-
-COPY .docker/nginx/grilli.com.conf /etc/nginx/sites-available/
-
-RUN ln -s /etc/nginx/sites-available/grilli.com.conf /etc/nginx/sites-enabled/
-
-CMD ["nginx","-g","daemon off;"]
-# CMD ["sh", "-c", "symfony server:start --port=8000 --no-tls & nginx -g 'daemon off;'"]
